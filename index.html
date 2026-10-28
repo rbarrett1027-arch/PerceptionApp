@@ -91,12 +91,17 @@ function vaseSVG(mode){
 /* ---------- activity 3: scrambled letters ---------- */
 var SENTENCE="Managers who understand perception can predict why their employees react to the same event in very different ways.";
 function scramble(s,seed){
+  /* Light scramble: swap one pair of neighboring inner letters per word (two pairs in long words). First and last letters stay put. */
   var r=seed;function rnd(){r=(r*9301+49297)%233280;return r/233280}
   return s.split(' ').map(function(w){
     var m=w.match(/^([A-Za-z]+)([^A-Za-z]*)$/); if(!m||m[1].length<4) return w;
-    var a=m[1].split(''), mid=a.slice(1,-1);
-    for(var i=mid.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=mid[i];mid[i]=mid[j];mid[j]=t}
-    return a[0]+mid.join('')+a[a.length-1]+m[2];
+    var a=m[1].split(''), n=a.length, swaps=n>=9?2:1, used=[];
+    for(var t=0;t<swaps;t++){
+      var k=1+Math.floor(rnd()*(n-3)); /* swap k and k+1, both inner */
+      if(used.indexOf(k)>-1||used.indexOf(k-1)>-1||used.indexOf(k+1)>-1) continue;
+      var x=a[k];a[k]=a[k+1];a[k+1]=x;used.push(k);
+    }
+    return a.join('')+m[2];
   }).join(' ');
 }
 
@@ -173,7 +178,7 @@ var ACT=[
   stageText:true,
   reveal:function(root){root.querySelector('#scr').textContent=SENTENCE;},
   extraButton:{label:'Scramble differently',fn:function(root){root.querySelector('#scr').textContent=scramble(SENTENCE,Math.floor(Math.random()*9000)+1)}},
-  explain:'Only the first and last letters of each word stayed in place, yet you probably read most of it. Your brain uses the shape of the word and the sentence around it to guess the rest.',
+  explain:'Each word had two neighboring letters swapped, yet you probably read the whole sentence without much trouble. Your brain uses the shape of the word and the sentence around it to guess the rest.',
   perceiver:'Expectations do much of the work. You read what you expected to see.',
   mgr:'This is why typos slip past proofreaders, and why managers hear what they expect an employee to say.',
   ask:'Where at work might expectations cause someone to miss a mistake?'},
@@ -260,7 +265,7 @@ function render(){
     box.innerHTML='<p>'+a.explain+'</p>'
      +'<div class="mgr"><div class="label">Perceiver, target, or situation</div><p>'+a.perceiver+'</p></div>'
      +'<div class="mgr"><div class="label">Why a manager should care</div><p>'+a.mgr+'</p></div>'
-     +'<div><div class="label">Talk with your pod</div><p>'+a.ask+'</p></div>';
+    ;
   };
   document.getElementById('next').onclick=function(){go(current+1)};
 }
