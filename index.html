@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Perception Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}
+/* Layout: one activity at a time; stage on top, question and reveal underneath. Gold is the single accent. */
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --fg:#1b2230; --muted:#5a6475; --line:#d9dde5;
+  --accent:#f2b300; --accent-fg:#1b2230; --stage:#ffffff; --shape:#1b2230; --hl:#2a5bd7; --hl2:#d1495b;
+  --display:'Bricolage Grotesque','Trebuchet MS',sans-serif; --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161f; --card:#1b2130; --fg:#eef1f6; --muted:#a2acbe; --line:#2d3649;
+  --accent:#f2b300; --accent-fg:#1b2230; --stage:#e9edf4; --shape:#1b2230; --hl:#5b8cff; --hl2:#ff6b7d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161f; --card:#1b2130; --fg:#eef1f6; --muted:#a2acbe; --line:#2d3649;
+  --accent:#f2b300; --accent-fg:#1b2230; --stage:#e9edf4; --shape:#1b2230; --hl:#5b8cff; --hl2:#ff6b7d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--body);padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font:700 clamp(28px,6vw,40px)/1.1 var(--display);margin:0;text-wrap:balance}
+h2{font:600 22px/1.2 var(--display);margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:6px 0 0;max-width:60ch}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav button{font:500 14px var(--body);border:1px solid var(--line);background:var(--card);color:var(--fg);padding:8px 12px;border-radius:999px;cursor:pointer}
+nav button[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+nav button .done{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--hl);margin-left:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.stage{background:var(--stage);border-radius:8px;display:flex;justify-content:center;padding:10px;min-height:120px}
+.stage svg{width:100%;max-width:420px;height:auto;display:block}
+.q{font-weight:600}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:500 15px var(--body);border:1.5px solid var(--fg);background:transparent;color:var(--fg);padding:9px 14px;border-radius:8px;cursor:pointer}
+.btn:hover{background:var(--line)}
+.btn.pick{background:var(--fg);color:var(--bg)}
+.btn.main{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn:focus-visible,nav button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
+.reveal{border-left:4px solid var(--accent);padding:2px 0 2px 14px;display:flex;flex-direction:column;gap:10px}
+.reveal[hidden]{display:none}
+.label{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mgr{background:var(--bg);border-radius:8px;padding:12px 14px}
+.mgr p,.reveal p{margin:0}
+ul{margin:0;padding-left:20px}
+.scram{font:500 20px/1.6 var(--body);letter-spacing:.02em;text-wrap:pretty}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.small{font-size:14px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<main>
+  <header>
+    <h1>Perception Lab</h1>
+    <p class="sub">Six short activities for BUS 230. Answer each one before you tap Reveal. Nothing you tap is saved or shared.</p>
+  </header>
+  <nav id="nav" aria-label="Activities"></nav>
+  <section id="view" class="card" aria-live="polite"></section>
+</main>
+
+<script>
+(function(){
+var answers = {}, current = 0, timers = [];
+function el(h){var d=document.createElement('div');d.innerHTML=h.trim();return d.firstChild}
+function clearTimers(){timers.forEach(clearInterval);timers.forEach(clearTimeout);timers=[]}
+
+/* ---------- activity 1: vase or faces ---------- */
+var L=[[70,40],[72,70],[76,86],[48,104],[62,124],[54,134],[62,146],[54,158],[62,172],[50,196],[70,216],[82,250],[84,270],[112,292]];
+function vaseSVG(mode){
+  var cx=200, top=22, bot=300;
+  var left=L.map(function(p){return [cx-p[0],p[1]+0]});
+  var right=L.map(function(p){return [cx+p[0],p[1]+0]});
+  var vase='M'+(cx-70)+' '+top+' L'+(cx+70)+' '+top+' L'+(cx+70)+' 40 '+right.slice(1).map(function(p){return 'L'+p[0]+' '+p[1]}).join(' ')+' L'+(cx+112)+' '+bot+' L'+(cx-112)+' '+bot+' '+left.slice().reverse().map(function(p){return 'L'+p[0]+' '+p[1]}).join(' ')+' Z';
+  var vaseFill = mode==='vase' ? 'var(--hl)' : 'var(--stage)';
+  var faceFill = mode==='faces' ? 'var(--hl2)' : 'var(--shape)';
+  if(mode==='vase') faceFill='var(--shape)';
+  var lf='M0 0 L'+(cx-70)+' 0 L'+(cx-70)+' 40 '+left.slice(1).map(function(p){return 'L'+p[0]+' '+p[1]}).join(' ')+' L'+(cx-112)+' '+bot+' L0 '+bot+' L0 0 Z';
+  var rf='M400 0 L'+(cx+70)+' 0 L'+(cx+70)+' 40 '+right.slice(1).map(function(p){return 'L'+p[0]+' '+p[1]}).join(' ')+' L'+(cx+112)+' '+bot+' L400 '+bot+' L400 0 Z';
+  return '<svg viewBox="0 0 400 300" role="img" aria-label="Black and white figure that can be read as a vase or as two faces">'
+   +'<rect width="400" height="300" fill="var(--stage)"/>'
+   +'<path d="'+vase+'" fill="'+vaseFill+'" stroke="var(--shape)" stroke-width="0"/>'
+   +'<path d="'+lf+'" fill="'+faceFill+'"/><path d="'+rf+'" fill="'+faceFill+'"/></svg>';
+}
+
+/* ---------- activity 3: scrambled letters ---------- */
+var SENTENCE="Managers who understand perception can predict why their employees react to the same event in very different ways.";
+function scramble(s,seed){
+  var r=seed;function rnd(){r=(r*9301+49297)%233280;return r/233280}
+  return s.split(' ').map(function(w){
+    var m=w.match(/^([A-Za-z]+)([^A-Za-z]*)$/); if(!m||m[1].length<4) return w;
+    var a=m[1].split(''), mid=a.slice(1,-1);
+    for(var i=mid.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=mid[i];mid[i]=mid[j];mid[j]=t}
+    return a[0]+mid.join('')+a[a.length-1]+m[2];
+  }).join(' ');
+}
+
+/* ---------- activity 4: Muller-Lyer ---------- */
+function mlSVG(reveal){
+  var g='<line x1="60" y1="70" x2="340" y2="70" stroke="var(--shape)" stroke-width="4"/>'
+   +'<path d="M60 70 L82 52 M60 70 L82 88 M340 70 L318 52 M340 70 L318 88" stroke="var(--shape)" stroke-width="4" fill="none" stroke-linecap="round"/>'
+   +'<line x1="60" y1="190" x2="340" y2="190" stroke="var(--shape)" stroke-width="4"/>'
+   +'<path d="M60 190 L38 172 M60 190 L38 208 M340 190 L362 172 M340 190 L362 208" stroke="var(--shape)" stroke-width="4" fill="none" stroke-linecap="round"/>'
+   +'<text x="14" y="30" font-size="18" fill="var(--shape)" font-family="IBM Plex Sans,sans-serif" font-weight="600">A</text>'
+   +'<text x="14" y="150" font-size="18" fill="var(--shape)" font-family="IBM Plex Sans,sans-serif" font-weight="600">B</text>';
+  if(reveal) g+='<line x1="60" y1="20" x2="60" y2="240" stroke="var(--hl2)" stroke-width="2.5" stroke-dasharray="6 5"/><line x1="340" y1="20" x2="340" y2="240" stroke="var(--hl2)" stroke-width="2.5" stroke-dasharray="6 5"/>';
+  return '<svg viewBox="0 0 400 250" role="img" aria-label="Two horizontal lines with different end marks">'+g+'</svg>';
+}
+
+/* ---------- activity 5: contrast ---------- */
+function contrastSVG(reveal){
+  var g='<rect x="10" y="20" width="185" height="200" fill="#1a1a1a"/><rect x="205" y="20" width="185" height="200" fill="#efefef"/>'
+   +'<rect x="55" y="75" width="95" height="90" fill="#8a8a8a"/><rect x="250" y="75" width="95" height="90" fill="#8a8a8a"/>';
+  if(reveal) g+='<rect x="150" y="110" width="100" height="20" fill="#8a8a8a"/>';
+  return '<svg viewBox="0 0 400 240" role="img" aria-label="Two gray squares on a dark and a light background">'+g+'</svg>';
+}
+
+/* ---------- activity 6: change blindness ---------- */
+var SCENE=[[60,70,26,'#c0392b'],[130,50,20,'#2d7dd2'],[200,95,30,'#f2b300'],[280,60,22,'#2a9d8f'],[340,110,26,'#7b4bb7'],[90,150,24,'#2d7dd2'],[170,170,28,'#c0392b'],[250,165,22,'#f2b300'],[320,190,26,'#2a9d8f'],[50,205,20,'#7b4bb7']];
+function sceneSVG(alt,mark){
+  var s=SCENE.map(function(c,i){
+    var col=c[3], x=c[0];
+    if(alt&&i===6) col='#2a9d8f';
+    return '<circle cx="'+x+'" cy="'+c[1]+'" r="'+c[2]+'" fill="'+col+'"/>';
+  }).join('');
+  if(mark) s+='<circle cx="170" cy="170" r="40" fill="none" stroke="var(--hl2)" stroke-width="4" stroke-dasharray="7 5"/>';
+  return '<svg viewBox="0 0 400 240" role="img" aria-label="Scene of colored circles"><rect width="400" height="240" fill="var(--stage)"/>'+s+'</svg>';
+}
+
+/* ---------- activity 2: Necker cube ---------- */
+function neckerSVG(){
+  return '<svg viewBox="0 0 400 280" role="img" aria-label="Wireframe cube that can flip between two views">'
+   +'<g fill="none" stroke="var(--shape)" stroke-width="4" stroke-linejoin="round">'
+   +'<rect x="110" y="110" width="130" height="130"/><rect x="170" y="50" width="130" height="130"/>'
+   +'<path d="M110 110 L170 50 M240 110 L300 50 M110 240 L170 180 M240 240 L300 180"/></g>'
+   +'<text x="160" y="232" font-size="16" fill="var(--hl)" font-family="IBM Plex Sans,sans-serif" font-weight="600">A</text>'
+   +'<text x="266" y="86" font-size="16" fill="var(--hl2)" font-family="IBM Plex Sans,sans-serif" font-weight="600">B</text></svg>';
+}
+
+/* ---------- activity definitions ---------- */
+var ACT=[
+ {key:'vase',title:'Vase or faces?',
+  prompt:'Look at the picture for five seconds. What do you see first?',
+  choices:['A vase','Two faces','Both at once'],
+  stage:function(){return vaseSVG('plain')},
+  reveal:function(root){
+    root.querySelector('.stage').innerHTML=vaseSVG('plain');
+    var r=el('<div class="row"><button class="btn" data-m="vase">Highlight the vase</button><button class="btn" data-m="faces">Highlight the faces</button><button class="btn" data-m="plain">Reset</button></div>');
+    root.querySelector('.extra').appendChild(r);
+    r.addEventListener('click',function(e){var m=e.target.getAttribute&&e.target.getAttribute('data-m');if(m)root.querySelector('.stage').innerHTML=vaseSVG(m)});
+  },
+  explain:'The picture never changed. Your brain picked one reading and held it. Most people can switch once they know the other reading exists.',
+  perceiver:'What you expect and what you saw most recently shape which reading you get first.',
+  mgr:'Two employees can look at the same sales report, the same policy change, or the same meeting and honestly see different things. Neither is lying.',
+  ask:'Think of a time you and a friend saw the same event differently. What did each of you bring to it?'},
+ {key:'cube',title:'The flipping cube',
+  prompt:'Look at this cube. Which square looks like the front face, A (lower left) or B (upper right)?',
+  choices:['A is in front','B is in front','It keeps flipping'],
+  stage:function(){return neckerSVG()},
+  explain:'The lines are the same, and both views are equally correct. Your brain has to pick one, and it can change its mind without any new information.',
+  perceiver:'The target (a drawing with no depth cues) gives the perceiver nothing to settle the question, so the perceiver decides.',
+  mgr:'When information is incomplete, people fill the gap with their own reading. Employees do this with a vague email from their boss.',
+  ask:'When have you read a vague message and decided what it meant before checking with the sender?'},
+ {key:'scram',title:'Scrambled letters',
+  prompt:'Read the sentence above out loud to yourself. Tap "I read it" when you finish.',
+  choices:null,
+  stage:function(){return '<div class="scram" id="scr">'+scramble(SENTENCE,7)+'</div>'},
+  stageText:true,
+  reveal:function(root){root.querySelector('#scr').textContent=SENTENCE;},
+  extraButton:{label:'Scramble differently',fn:function(root){root.querySelector('#scr').textContent=scramble(SENTENCE,Math.floor(Math.random()*9000)+1)}},
+  explain:'Only the first and last letters of each word stayed in place, yet you probably read most of it. Your brain uses the shape of the word and the sentence around it to guess the rest.',
+  perceiver:'Expectations do much of the work. You read what you expected to see.',
+  mgr:'This is why typos slip past proofreaders, and why managers hear what they expect an employee to say.',
+  ask:'Where at work might expectations cause someone to miss a mistake?'},
+ {key:'ml',title:'Which line is longer?',
+  prompt:'Compare line A and line B. Which is longer?',
+  choices:['A is longer','B is longer','They are the same'],
+  stage:function(){return mlSVG(false)},
+  reveal:function(root){root.querySelector('.stage').innerHTML=mlSVG(true)},
+  explain:'The two lines are exactly the same length. The dashed guides show it. The arrow ends change how long each line feels.',
+  perceiver:'Knowing the answer does not make the illusion go away. Perception is not under conscious control.',
+  mgr:'Context changes judgment. A candidate looks stronger or weaker depending on who interviewed before them.',
+  ask:'Have you ever judged someone differently because of who was standing next to them?'},
+ {key:'contrast',title:'Two gray squares',
+  prompt:'Compare the gray square on the dark background with the one on the light background. Are they the same gray?',
+  choices:['The left one is lighter','The right one is lighter','They match'],
+  stage:function(){return contrastSVG(false)},
+  reveal:function(root){root.querySelector('.stage').innerHTML=contrastSVG(true)},
+  explain:'Both squares are the same gray. The bar connecting them proves it. The background fools you into thinking they differ.',
+  perceiver:'The situation (the surroundings) changes how the target is seen.',
+  mgr:'The same 3% raise feels generous in a year with no raises and stingy in a year when everyone else got 6%.',
+  ask:'What comparison point do you use when you decide whether a grade, a job offer, or a raise is good?'},
+ {key:'change',title:'Spot the change',
+  prompt:'The picture will flash between two versions with a short blank in between. Tap "I see it" the moment you spot what changes.',
+  choices:null,
+  stage:function(){return sceneSVG(false,false)},
+  custom:true,
+  explain:'Something changed on every flash, but your brain did not notice it until you looked right at it. Attention is limited, so we see only part of what is in front of us.',
+  perceiver:'We pay attention to what we expect to matter.',
+  mgr:'Managers miss changes in their own team (a quiet employee getting quieter) when nothing is drawing their attention to it.',
+  ask:'What gradual change in a team might a busy manager miss?'}
+];
+
+/* ---------- rendering ---------- */
+var nav=document.getElementById('nav'), view=document.getElementById('view');
+function renderNav(){
+  nav.innerHTML='';
+  ACT.forEach(function(a,i){
+    var b=document.createElement('button');
+    b.textContent=(i+1)+'. '+a.title;
+    if(i===current) b.setAttribute('aria-current','true');
+    if(answers[a.key]) b.innerHTML+= '<span class="done" aria-label="done"></span>';
+    b.onclick=function(){go(i)};
+    nav.appendChild(b);
+  });
+  var s=document.createElement('button');
+  s.textContent='Summary'; if(current===ACT.length) s.setAttribute('aria-current','true');
+  s.onclick=function(){go(ACT.length)};
+  nav.appendChild(s);
+}
+function go(i){clearTimers();current=i;renderNav();render()}
+
+function render(){
+  if(current===ACT.length){return summary()}
+  var a=ACT[current];
+  view.innerHTML='<div class="label">Activity '+(current+1)+' of '+ACT.length+'</div><h2>'+a.title+'</h2>'
+    +'<div class="stage" id="stage">'+a.stage()+'</div>'
+    +'<p class="q">'+a.prompt+'</p>'
+    +'<div class="choices" id="choices"></div>'
+    +'<div class="extra row" id="extra"></div>'
+    +'<div class="row"><button class="btn main" id="rev">Reveal</button><button class="btn" id="next">'+(current<ACT.length-1?'Next activity':'See summary')+'</button></div>'
+    +'<div class="reveal" id="revbox" hidden></div>';
+  var ch=document.getElementById('choices');
+  if(a.choices){
+    a.choices.forEach(function(c){
+      var b=document.createElement('button');b.className='btn';b.textContent=c;
+      if(answers[a.key]===c)b.classList.add('pick');
+      b.onclick=function(){answers[a.key]=c;Array.prototype.forEach.call(ch.children,function(x){x.classList.remove('pick')});b.classList.add('pick');renderNav()};
+      ch.appendChild(b);
+    });
+  }
+  if(a.key==='scram'){
+    var rb=document.createElement('button');rb.className='btn';rb.textContent='I read it';
+    rb.onclick=function(){answers[a.key]='Read it';renderNav();rb.classList.add('pick')};ch.appendChild(rb);
+    var sb=document.createElement('button');sb.className='btn';sb.textContent='Scramble differently';
+    sb.onclick=function(){a.extraButton.fn(view)};ch.appendChild(sb);
+  }
+  if(a.key==='change') setupChange(a);
+  document.getElementById('rev').onclick=function(){
+    var box=document.getElementById('revbox');
+    if(!box.hidden)return;
+    if(a.reveal&&a.key!=='change') a.reveal(view);
+    if(a.key==='change'){clearTimers();document.getElementById('stage').innerHTML=sceneSVG(true,true)}
+    box.hidden=false;
+    box.innerHTML='<p>'+a.explain+'</p>'
+     +'<div class="mgr"><div class="label">Perceiver, target, or situation</div><p>'+a.perceiver+'</p></div>'
+     +'<div class="mgr"><div class="label">Why a manager should care</div><p>'+a.mgr+'</p></div>'
+     +'<div><div class="label">Talk with your pod</div><p>'+a.ask+'</p></div>';
+  };
+  document.getElementById('next').onclick=function(){go(current+1)};
+}
+
+function setupChange(a){
+  var extra=document.getElementById('extra');
+  var start=document.createElement('button');start.className='btn';start.textContent='Start flashing';
+  var found=document.createElement('button');found.className='btn';found.textContent='I see it';found.hidden=true;
+  var info=document.createElement('span');info.className='small';
+  extra.appendChild(start);extra.appendChild(found);extra.appendChild(info);
+  var t0=0;
+  start.onclick=function(){
+    clearTimers();var st=document.getElementById('stage');var n=0;var phase=0;
+    start.textContent='Restart';found.hidden=false;info.textContent='';t0=Date.now();
+    var seq=[ [false,900],[null,250],[true,900],[null,250] ];
+    function step(){
+      var p=seq[phase%4];
+      st.innerHTML = p[0]===null ? '<svg viewBox="0 0 400 240"><rect width="400" height="240" fill="var(--stage)"/></svg>' : sceneSVG(p[0],false);
+      phase++; timers.push(setTimeout(step,p[1]));
+    }
+    step();
+  };
+  found.onclick=function(){
+    var secs=((Date.now()-t0)/1000).toFixed(1);
+    clearTimers();answers.change='Spotted it in '+secs+' seconds';renderNav();
+    info.textContent='You tapped after '+secs+' seconds. Tap Reveal to check.';
+  };
+}
+
+function summary(){
+  var rows=ACT.map(function(a){return '<tr><td>'+a.title+'</td><td>'+(answers[a.key]||'Skipped')+'</td></tr>'}).join('');
+  view.innerHTML='<div class="label">Wrap-up</div><h2>What these six have in common</h2>'
+   +'<table><thead><tr><th>Activity</th><th>Your answer</th></tr></thead><tbody>'+rows+'</tbody></table>'
+   +'<div class="mgr"><div class="label">Weekly Concept</div><p>People respond to what they perceive, not to reality. Perception depends on the perceiver, the target, and the situation.</p></div>'
+   +'<div><div class="label">Discuss as a class</div><ul>'
+   +'<li>Did any of your answers surprise you? Did anyone in your pod answer differently?</li>'
+   +'<li>If your own perception can be wrong, how should a manager judge an employee’s behavior?</li>'
+   +'<li>What question could you ask before you decide why someone acted the way they did? (Think distinctiveness, consensus, consistency.)</li></ul></div>'
+   +'<div class="row"><button class="btn" id="restart">Start over</button></div>';
+  document.getElementById('restart').onclick=function(){answers={};go(0)};
+}
+
+renderNav();render();
+})();
+</script>
+
+</body>
+</html>
